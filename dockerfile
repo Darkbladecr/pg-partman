@@ -1,4 +1,6 @@
-FROM postgres:16-alpine
+FROM --platform=$BUILDPLATFORM postgres:16-alpine
+
+ARG TARGETARCH
 
 ENV PG_PARTMAN_VERSION v5.0.1
 ENV PG_CRON_VERSION v1.6.2
