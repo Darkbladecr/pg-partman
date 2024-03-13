@@ -1,16 +1,18 @@
 CREATE SCHEMA IF NOT EXISTS user_completed;
 
 CREATE TABLE user_completed.cards (
-  id BIGINT NOT NULL
+  id INT NOT NULL
   , "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now()
   , "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now()
-  , "cardId" INT NOT NULL REFERENCES cards(id) ON DELETE CASCADE ON UPDATE CASCADE
-  , "userId" INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+  , "cardId" INT NOT NULL
+  , "userId" INT NOT NULL
   , "lastSeen" TIMESTAMPTZ
   , score float4
   , iteration int4 DEFAULT 0
   , "reviewDate" timestamptz
   , "optimalFactor" float4 DEFAULT '2'::REAL NOT NULL
+  , CONSTRAINT cards_cardid_fk FOREIGN KEY ("cardId") REFERENCES public.cards(id) ON DELETE CASCADE ON UPDATE CASCADE
+  , CONSTRAINT cards_userid_fk FOREIGN KEY ("userId") REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE
   , PRIMARY KEY ("userId", "cardId")
 ) PARTITION BY RANGE ("userId");
 
@@ -18,8 +20,8 @@ CREATE INDEX ON user_completed.cards ("userId");
 
 CREATE TABLE partman.template_user_completed_cards (
   LIKE user_completed.cards INCLUDING DEFAULTS INCLUDING CONSTRAINTS INCLUDING INDEXES
-  , CONSTRAINT template_user_completed_cards_cardid_fk FOREIGN KEY ("cardId") REFERENCES cards(id) ON DELETE CASCADE ON UPDATE CASCADE
-  , CONSTRAINT template_user_completed_cards_userid_fk FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE
+  , CONSTRAINT template_user_completed_cards_cardid_fk FOREIGN KEY ("cardId") REFERENCES public.cards(id) ON DELETE CASCADE ON UPDATE CASCADE
+  , CONSTRAINT template_user_completed_cards_userid_fk FOREIGN KEY ("userId") REFERENCES public.users(id) ON DELETE CASCADE ON UPDATE CASCADE
   , PRIMARY KEY ("userId", "cardId")
 );
 
@@ -41,6 +43,12 @@ CALL partman.partition_data_proc(
 
 DROP TABLE user_completed.user_completed_cards CASCADE;
 
+-- will need to update GraphQL to create the cache key from: userId_cardId
+-- typePolicies: {
+--   UserCompletedQuestion: {
+--     keyFields: ["userId", "cardId"]
+--   }
+-- }
 ALTER TABLE user_completed.cards DROP COLUMN id;
 
 ALTER TABLE partman.template_user_completed_cards DROP COLUMN id;
