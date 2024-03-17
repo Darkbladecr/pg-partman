@@ -48,3 +48,21 @@ WHERE
   parent_table = 'marks.osce_marksheet';
 
 -- SELECT partman.apply_constraints('marks.marksheet', 'marks.marksheet_p0', TRUE);
+
+CREATE TABLE deleted.marks_osce_marksheet (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE marks.osce_marksheet INCLUDING ALL
+);
+
+CREATE VIEW combined.marks_osce_marksheet AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM marks.osce_marksheet
+  UNION ALL
+  SELECT * FROM deleted.marks_osce_marksheet
+);
+
+CREATE TRIGGER marks_osce_marksheet_deleted_at
+AFTER DELETE ON marks.osce_marksheet
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();

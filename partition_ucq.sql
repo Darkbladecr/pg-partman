@@ -48,3 +48,21 @@ DROP TABLE user_completed.user_completed_questions CASCADE;
 ALTER TABLE user_completed.questions DROP COLUMN id;
 
 ALTER TABLE partman.template_user_completed_questions DROP COLUMN id;
+
+CREATE TABLE deleted.user_completed_questions (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE user_completed.questions INCLUDING ALL
+);
+
+CREATE VIEW combined.user_completed_questions AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM user_completed.questions
+  UNION ALL
+  SELECT * FROM deleted.user_completed_questions
+);
+
+CREATE TRIGGER user_completed_questions_deleted_at
+AFTER DELETE ON user_completed.questions
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();
