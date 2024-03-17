@@ -50,3 +50,21 @@ WHERE
   parent_table = 'marks.todo';
 
 -- SELECT partman.apply_constraints('marks.todo', 'marks.todo_p0', TRUE);
+
+CREATE TABLE deleted.marks_todo (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE marks.todo INCLUDING ALL
+);
+
+CREATE VIEW combined.marks_todo AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM marks.todo
+  UNION ALL
+  SELECT * FROM deleted.marks_todo
+);
+
+CREATE TRIGGER marks_todo_deleted_at
+AFTER DELETE ON marks.todo
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();

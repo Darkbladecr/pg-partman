@@ -45,10 +45,28 @@ DROP TABLE user_completed.user_completed_cards CASCADE;
 
 -- will need to update GraphQL to create the cache key from: userId_cardId
 -- typePolicies: {
---   UserCompletedQuestion: {
+--   UserCompletedCard: {
 --     keyFields: ["userId", "cardId"]
 --   }
 -- }
 ALTER TABLE user_completed.cards DROP COLUMN id;
 
 ALTER TABLE partman.template_user_completed_cards DROP COLUMN id;
+
+CREATE TABLE deleted.user_completed_cards (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE user_completed.cards INCLUDING ALL
+);
+
+CREATE VIEW combined.user_completed_cards AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM user_completed.cards
+  UNION ALL
+  SELECT * FROM deleted.user_completed_cards
+);
+
+CREATE TRIGGER user_completed_cards_deleted_at
+AFTER DELETE ON user_completed.cards
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();

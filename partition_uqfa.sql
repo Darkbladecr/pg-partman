@@ -36,3 +36,21 @@ CALL partman.partition_data_proc(
 );
 
 DROP TABLE user_completed.user_questions_first_attempt CASCADE;
+
+CREATE TABLE deleted.user_completed_questions_first_attempt (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE user_completed.questions_first_attempt INCLUDING ALL
+);
+
+CREATE VIEW combined.user_completed_questions_first_attempt AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM user_completed.questions_first_attempt
+  UNION ALL
+  SELECT * FROM deleted.user_completed_questions_first_attempt
+);
+
+CREATE TRIGGER user_completed_questions_first_attempt_deleted_at
+AFTER DELETE ON user_completed.questions_first_attempt
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();

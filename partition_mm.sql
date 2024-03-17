@@ -56,3 +56,21 @@ WHERE
   parent_table = 'marks.marksheet';
 
 -- SELECT partman.apply_constraints('marks.marksheet', 'marks.marksheet_p0', TRUE);
+
+CREATE TABLE deleted.marks_marksheet (
+  "deletedAt" TIMESTAMP DEFAULT now()
+  , LIKE marks.marksheet INCLUDING ALL
+);
+
+CREATE VIEW combined.marks_marksheet AS (
+  SELECT NULL AS "deletedAt"
+  , *
+  FROM marks.marksheet
+  UNION ALL
+  SELECT * FROM deleted.marks_marksheet
+);
+
+CREATE TRIGGER marks_marksheet_deleted_at
+AFTER DELETE ON marks.marksheet
+FOR EACH ROW
+EXECUTE PROCEDURE soft_delete_partition();
